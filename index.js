@@ -23,6 +23,27 @@ const getList = async () => {
   }
 };
 
+const render = async () => {
+  let data = await getList();
+  console.log("This is the data");
+  console.log(data);
+  const list = document.querySelector("ul");
+
+  // Logs the stringified party list
+  console.log("Stringified Party List");
+  data.forEach((party) =>
+    console.log(`This is a party ${JSON.stringify(party)}`)
+  );
+
+  const ul = document.getElementById("ul");
+  let listElement = data.forEach((party) => {
+    const li = document.createElement("li");
+    state.textContent = JSON.stringify(party);
+    li.textContent = `${name}, ${date}, ${time}, ${location}, ${description}`;
+    ul.appendChild(li);
+  });
+};
+
 const addParty = async (event) => {
   event.preventDefault();
 
@@ -73,27 +94,6 @@ const addParty = async (event) => {
 //   console.log("This is the Data");
 //   console.log(getList());
 // };
-
-const render = async () => {
-  let data = await getList();
-  console.log("This is the data");
-  console.log(data);
-  const list = document.querySelector("ul");
-
-  // Logs the stringified party list
-  console.log("Stringified Party List");
-  data.forEach((party) =>
-    console.log(`This is a party ${JSON.stringify(party)}`)
-  );
-
-  const ul = document.getElementById("ul");
-  let listElement = data.forEach((party) => {
-    const li = document.createElement("li");
-    state.textContent = JSON.stringify(party);
-    li.textContent = `${name}, ${date}, ${time}, ${location}, ${description}`;
-    ul.appendChild(li);
-  });
-};
 
 const init = () => {
   getList();
