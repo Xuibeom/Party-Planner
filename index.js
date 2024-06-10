@@ -1,109 +1,133 @@
-const state = {
+// Holds the list from the API and is what we put on the page
+let state = {
   parties: [],
 };
 
 const getList = async () => {
+  // Gets the list from the API and then sets it to state.parties above
   try {
     const response = await fetch(
       "https://fsa-crud-2aa9294fe819.herokuapp.com/api/2405-FTB-ET-WEB-FT/events"
     );
-    const data = await response.json();
-    state.parties = data.data;
+    const APIdata = await response.json();
+    state.parties = APIdata.data;
 
-    // It is fine that it prints twice in the local server, logs the data directly from the API
-    console.log("This is the basic data directly from the API");
-    console.log(data);
-
-    console.log("This is state's object array");
-    console.log(state);
-
+    console.log("This is state.parties");
+    console.log(state.parties);
     return state.parties;
   } catch (error) {
     console.error("Error fetching data");
   }
 };
+console.log(getList());
 
 const render = async () => {
-  let data = await getList();
-  console.log("This is the data");
-  console.log(data);
-  const list = document.querySelector("ul");
+  const parties = await getList();
+  // We have to stringify the parties or our function will not know how to read the JSON data
+  if (parties) {
+    let ul = document.getElementById("ul");
+    partyStrings = JSON.stringify(state.parties);
+    console.log("This is state.parties STRINGIFIED");
+    console.log(partyStrings);
 
-  // Logs the stringified party list
-  console.log("Stringified Party List");
-  data.forEach((party) =>
-    console.log(`This is a party ${JSON.stringify(party)}`)
-  );
+    // Empties the list before repopulating
+    ul.innerHTML = "";
 
-  const ul = document.getElementById("ul");
-  let listElement = data.forEach((party) => {
-    const li = document.createElement("li");
-    state.textContent = JSON.stringify(party);
-    li.textContent = `${name}, ${date}, ${time}, ${location}, ${description}`;
-    ul.appendChild(li);
-  });
+    parties.forEach((party) => {
+      let li = document.createElement("li");
+      li.textContent = `${party.name}, ${party.date}, ${party.location}, ${party.description}`;
+
+      // Formats the listing and adds a delete button
+      li.innerHTML = `
+      <div class="party-listing">
+        <h5>${party.name}</h5>
+        <p>Date: ${party.date}, Time: ${party.time}</p>
+        <p>Location: ${party.location}</p>
+        <p>Description: ${party.description}</p>
+      </div>
+      <button class="btn btn-danger btn-sm" id="${party.id}">Delete</button>`;
+      ul.appendChild(li);
+
+      // Event listener for the delete function
+      let deleteButton = document.getElementById(party.id);
+      deleteButton.addEventListener("click", deleteParty);
+    });
+  } else {
+    return console.log("Error, parties not found");
+  }
 };
 
 const addParty = async (event) => {
   event.preventDefault();
 
-  const partyName = document.getElementById("NameInput");
-  const partyDate = document.getElementById("DateInput");
-  const partyTime = document.getElementById("TimeInput");
-  const partyLocation = document.getElementById("LocationInput");
-  const partyDescription = document.getElementById("DescriptionInput");
+  const partyFormData = new FormData(document.getElementById("PartyForm"));
 
-  //We were told to not worry about the time because it was not working
+  const partyName = partyFormData.get("NameInput");
+  const partyDate = partyFormData.get("DateInput");
+  const partyTime = partyFormData.get("TimeInput");
+  const partyLocation = partyFormData.get("LocationInput");
+  const partyDescription = partyFormData.get("DescriptionInput");
+
+  // Removed time because it did not work with the API format (Aaron said it was okay when our group asked)
   const newParty = {
     name: partyName,
-    date: "1-31-2001",
-    time: "12:00",
+    date: "2024-10-10T14:00:00.000Z",
     location: partyLocation,
     description: partyDescription,
   };
 
   try {
     const response = await fetch(
-      "https://fsa-crud-2aa9294fe819.herokuapp.com/api/2405-FTB-ET-WEB-FT/events",
+      `https://fsa-crud-2aa9294fe819.herokuapp.com/api/2405-FTB-ET-WEB-FT/events`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(newParty), //converts newParty to a JSON string
+        body: JSON.stringify(newParty),
       }
     );
-    const data = await response.json();
-    console.log("This is the Data");
-    return data;
+    console.log(response);
+    render();
   } catch (error) {
-    console.error("Error fetching data");
+    console.error("Error adding party");
   }
 };
 
-// const deleteParty = async () => {
-//   try {
-//     const response = await fetch(
-//       "https://fsa-crud-2aa9294fe819.herokuapp.com/api/2405-FTB-ET-WEB-FT/events"
-//     );
-//     const data = await response.json();
-//     return data;
-//   } catch (error) {
-//     console.error("Error fetching data");
-//   }
-//   console.log("This is the Data");
-//   console.log(getList());
-// };
+const deleteParty = async (event) => {
+  event.preventDefault();
 
-const init = () => {
-  getList();
-  render();
-  addParty();
+  // Takes the id of the party from delete button event listener, searches the API using said ID, uses the DELETE method to remove it.
+  let partyID = event.target.id;
+  try {
+    const response = await fetch(
+      `https://fsa-crud-2aa9294fe819.herokuapp.com/api/2405-FTB-ET-WEB-FT/events/${partyID}`,
+      {
+        method: "DELETE",
+      }
+    );
+    console.log(response);
 
-  const submitButton = document.getElementById("SubmitButton");
-  submitButton.addEventListener("click", addInputParty);
-  console.log("Hello");
+    // Checks if the response went through and removes the child element, li from ul.
+    if (response.ok) {
+      console.log(`Party with ID ${partyID} deleted`);
+
+      let ul = document.getElementById("ul");
+      let li = event.target.parentNode; // Sets the li as the parent of the delete button (event.target), which is the whole party listing
+      ul.removeChild(li);
+    } else {
+      throw new Error("Failed to delete party");
+    }
+  } catch (error) {
+    console.error("Error deleting party");
+  }
 };
 
-init();
-document.addEventListener("DOMContentLoaded", init);
+const initialize = () => {
+  const submitButton = document.getElementById("SubmitButton");
+  submitButton.addEventListener("click", addParty);
+
+  render();
+};
+
+initialize();

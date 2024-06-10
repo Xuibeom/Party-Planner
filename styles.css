@@ -9,3 +9,11 @@ form {
 main {
   padding: 15px;
 }
+
+li {
+  padding: 10px;
+}
+
+.form-listing {
+  padding: 5px;
+}
